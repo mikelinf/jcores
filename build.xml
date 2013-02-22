@@ -1,0 +1,151 @@
+<?xml version="1.0"?>
+
+<!-- General project description -->
+<project name="jcores" default="all">
+    
+    <!-- Define different global variables -->
+    <property name="prefix" value="jcores"/>
+    <property name="version" value="0.9.2"/>
+    
+    <tstamp/>
+
+	<!-- Define different roots -->
+    <property name="build.root" value="ant.build/"/>
+    <property name="distribution.root" value="dist/"/>
+    
+    
+    <!-- Clear everything up -->
+    <target name="clean" description="Remove all previous build files">
+        <delete dir="${build.root}"/>
+        <delete dir="${distribution.root}"/>
+        <delete dir="documentation/api"/>
+        <mkdir dir="documentation/api"/>
+    </target>
+    
+    
+    <!-- Build jCores -->
+    <target name="compile" description="Compile jCores" depends="clean">
+        <!-- Create folders -->    	
+        <mkdir dir="${build.root}/jcores.jre/"/>
+        <mkdir dir="${build.root}/jcores.script/"/>
+
+        <!-- Make JRE core -->
+        <javac srcdir="core/jre/src" destdir="${build.root}/jcores.jre" source="1.7" target="1.7">
+            <classpath>
+                <fileset dir="core/jre/dependencies/">
+                    <include name="*.jar"/>
+                </fileset>
+            </classpath>
+        </javac>
+
+        <javac srcdir="extensions/script/src" destdir="${build.root}/jcores.script" source="1.7" target="1.7">
+        	<classpath>
+        		<path path="${build.root}/jcores.jre"></path>
+                <fileset dir="core/jre/dependencies/">
+                    <include name="*.jar"/>
+                </fileset>
+            </classpath>
+        </javac>
+    </target>
+
+	
+    <!-- Pack jCores -->
+    <target name="pack" description="Pack jCores">
+        <!-- Create output folder -->
+        <mkdir dir="${distribution.root}/"/>
+
+        <!-- Create version -->    	
+        <copy file="core/jre/src/net/jcores/jre/jcores.version" tofile="${build.root}/jcores.jre/net/jcores/jre/jcores.version"/>
+        <replace file="${build.root}/jcores.jre/net/jcores/jre/jcores.version" token="@@@VERSION@@@" value="${version}"/>
+        <replace file="${build.root}/jcores.jre/net/jcores/jre/jcores.version" token="@@@BUILDSTAMP@@@" value="${DSTAMP}${TSTAMP}"/>     
+        
+        <!-- Rejar everything -->
+        <unjar dest="${build.root}/jcores.jre" src="core/jre/dependencies/nexus-1.0.0.jar"/>    	
+        <jar destfile="${distribution.root}/${prefix}-${version}.jar" basedir="${build.root}/jcores.jre"/>
+        <jar destfile="${distribution.root}/${prefix}.script-${version}.jar" basedir="${build.root}/jcores.script"/>
+
+    	<jar destfile="${distribution.root}/${prefix}-${version}.sources.jar" basedir="core/jre/src/"/>
+    </target>
+
+	
+    
+    <!-- Run tests after we packed our result -->
+    <target name="test" description="Run all testcases">
+        <mkdir dir="${build.root}/tests/"/>
+        
+        <!-- Compile all testcases -->
+        <javac srcdir="core/jre/tests/src" destdir="${build.root}/tests/" source="1.7" target="1.7">
+            <classpath>
+                <fileset dir="${distribution.root}/">
+                    <filename name="*.jar"/>
+                </fileset>
+                <fileset dir="core/jre/tests/dependencies">
+                    <filename name="*.jar"/>
+                </fileset>
+            </classpath>
+        </javac>
+    	
+    	
+        <!-- Copy test resources -->
+        <copy file="core/jre/tests/src/junit/data/JIntellitype.zip" tofile="${build.root}/tests/junit/data/JIntellitype.zip"/>
+        <copy file="core/jre/tests/src/junit/data/mouse.wav" tofile="${build.root}/tests/junit/data/mouse.wav"/>
+        <copy file="core/jre/tests/src/junit/data/ranges.zip" tofile="${build.root}/tests/junit/data/ranges.zip"/>
+
+        
+        <!-- Run all testcases -->
+        <junit printsummary="true" haltonfailure="true" fork="true">
+            <formatter type="plain" usefile="false"/>
+            <batchtest>
+                <fileset dir="${build.root}/tests/" includes="junit/*Test.class"/>
+            </batchtest>
+            <classpath>
+                <fileset dir="${distribution.root}/">
+                    <include name="*.jar"/>
+                </fileset>
+                <fileset dir="core/jre/tests/dependencies/">
+                    <filename name="*.jar"/>
+                </fileset>
+            </classpath>
+            <classpath location="${build.root}/tests/"/>
+        </junit>
+    	
+        <!-- Delete generated files -->
+    	<delete file="big.file"></delete>
+        <delete file="test.jcores"></delete>
+        <delete file="test.plain.txt"></delete>
+    </target>
+    
+	
+    <!-- Documentation -->
+    <target name="documentation">
+        <javadoc access="public" stylesheetfile="documentation/javadoc.gen/javadoc.css" author="true" destdir="documentation/api" doctitle="jCores API" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="false" packagenames="net.jcores.jre.utils.map,net.jcores.jre.cores.adapter,net.jcores.jre.utils.throwables,net.jcores.jre.cores.commons,net.jcores.jre.cores,net.jcores.jre.utils,net.jcores.jre.extensions,net.jcores.jre.interfaces.functions,net.jcores.jre.managers,net.jcores.jre.options,net.jcores.jre.extensions,net.jcores.jre.interfaces.java,net.jcores.jre.annotations,net.jcores.jre.utils.map.generators,net.jcores.jre" source="1.7" sourcepath="extensions/script/src:core/jre/src:extensions/serialization.core/src:core/jre/tests/src" splitindex="true" use="true" version="true">
+        	<link href="http://download.oracle.com/javase/6/docs/api/"/>
+        </javadoc>
+    	<delete file="documentation/api/resources/inherit.gif"/>
+    	<copyfile dest="documentation/api/resources/inherit.gif" src="documentation/javadoc.gen/inherit.gif"/>
+    </target>
+    
+	
+    <!-- Prepare distributables -->
+    <target name="preparepublish" description="Generate distributables" >
+        <delete dir="${build.root}"/>
+        
+        <!-- Zip binary -->
+        <zip destfile="${distribution.root}/${prefix}-${version}.bin.zip">
+            <fileset dir=".">
+                <include name="documentation/**/*"/>
+                <include name="dist/*.jar"/>
+            </fileset>
+        </zip>
+        
+        <!-- Zip sources -->
+        <zip destfile="${distribution.root}/${prefix}-${version}.src.zip">
+            <fileset dir=".">
+                <include name="**/*"/>
+            </fileset>
+        </zip>
+    </target>
+
+    <!-- Pack plugins -->
+    <target name="all" depends="compile, pack, test, documentation, preparepublish"/>
+</project>

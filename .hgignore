@@ -1,0 +1,13 @@
+
+syntax: regexp
+^documentation/api$
+syntax: regexp
+^ant\.build$
+syntax: regexp
+^big\.file$
+syntax: regexp
+^test\.jcores$
+syntax: regexp
+^dist$
+syntax: regexp
+^test\.plain\.txt$
