@@ -1,2 +1,13 @@
 bin/**
 .DS_*
+dist/*
+!documentation/api/resources/inherit.gif
+documentation/api/resources/*
+!documentation/javadoc.gen
+documentation/*
+**/target/*
+**/nb-configuration.xml
+**/.sass-cache/*
+**/*.idea
+**/*.iml
+**/*.bak
